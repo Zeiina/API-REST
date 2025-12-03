@@ -1,0 +1,23 @@
+{
+  "name": "api-rest",
+  "version": "1.0.0",
+  "description": "Développement d'une API REST avec CRUD complet.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Zeiina/API-REST.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Zeiina/API-REST/issues"
+  },
+  "homepage": "https://github.com/Zeiina/API-REST#readme",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
