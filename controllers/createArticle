@@ -1,0 +1,51 @@
+const fs = require('fs').promises;
+const path = require('path');
+
+const DATA_DIR = path.join(__dirname, '..', 'data');
+const DATA_FILE = path.join(DATA_DIR, 'articles.json');
+
+async function ensureDataFile() {
+  try {
+    await fs.mkdir(DATA_DIR, { recursive: true });
+    await fs.access(DATA_FILE);
+  } catch {
+    await fs.writeFile(DATA_FILE, '[]', 'utf8');
+  }
+}
+
+async function readAll() {
+  await ensureDataFile();
+  const raw = await fs.readFile(DATA_FILE, 'utf8');
+  return JSON.parse(raw || '[]');
+}
+
+async function writeAll(items) {
+  await ensureDataFile();
+  await fs.writeFile(DATA_FILE, JSON.stringify(items, null, 2), 'utf8');
+}
+
+exports.createArticle = async (req, res) => {
+  const { title, content } = req.body || {};
+  if (!title || !content) {
+    const err = new Error('title and content are required');
+    err.status = 400;
+    throw err;
+  }
+
+  const items = await readAll();
+  const article = {
+    id: Date.now().toString(),
+    title,
+    content,
+    createdAt: new Date().toISOString()
+  };
+  items.push(article);
+  await writeAll(items);
+
+  res.status(201).json({ article });
+};
+
+exports.getAllArticles = async (req, res) => {
+  const items = await readAll();
+  res.json({ articles: items });
+};

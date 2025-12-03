@@ -1,0 +1,355 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Articles Manager</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container { max-width: 900px; margin: 0 auto; }
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      padding: 30px;
+      margin-bottom: 20px;
+    }
+    h1 { color: #333; margin-bottom: 30px; text-align: center; font-size: 2.5em; }
+    h2 { color: #555; margin: 20px 0 15px; font-size: 1.5em; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
+    input, textarea {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 1em;
+      font-family: inherit;
+      transition: border-color 0.3s;
+      margin-bottom: 12px;
+    }
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1em;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+    .btn-primary { background: #667eea; color: white; flex: 1; min-width: 150px; }
+    .btn-success { background: #48bb78; color: white; }
+    .btn-danger { background: #f56565; color: white; }
+    .btn-info { background: #4299e1; color: white; padding: 8px 16px; font-size: 0.9em; }
+    .auth-form { display: flex; gap: 10px; flex-wrap: wrap; align-items:center; }
+    .auth-form input { flex: 1; min-width: 150px; margin: 0; }
+    .auth-actions { display:flex; gap:8px; }
+    .login-status {
+      background: #e6f3ff;
+      border-left: 4px solid #4299e1;
+      padding: 15px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    .login-status.active { display: block; }
+    .articles-list { list-style: none; padding-left:0; }
+    .article-item {
+      background: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 15px;
+      transition: all 0.3s;
+    }
+    .article-title { font-size: 1.3em; font-weight: 600; color: #2d3748; margin-bottom: 8px; }
+    .article-content { color: #4a5568; line-height: 1.6; margin-bottom: 12px; word-wrap: break-word; }
+    .article-meta { font-size: 0.85em; color: #a0aec0; margin-bottom: 12px; }
+    .article-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .debug-panel { background: #2d3748; color: #e2e8f0; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 0.85em; max-height: 200px; overflow-y: auto; margin-top: 20px; }
+    .empty-state { text-align: center; padding: 40px; color: #a0aec0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📝 Articles Manager</h1>
+
+    <div class="card">
+      <h2>🔐 Authentification</h2>
+      <div class="auth-form">
+        <input id="authUser" placeholder="Username" />
+        <input id="authPass" type="password" placeholder="Password" />
+        <div class="auth-actions">
+          <button class="btn-primary" id="loginBtn">Se connecter</button>
+          <button class="btn-success" id="registerBtn">S'enregistrer</button>
+          <button class="btn-info" id="createAndLoginBtn">Créer user + login</button>
+          <button class="btn-danger" id="logoutBtn" style="display:none;">Se déconnecter</button>
+        </div>
+      </div>
+      <div class="login-status" id="loginStatus"></div>
+    </div>
+
+    <div class="card">
+      <h2>➕ Créer un article</h2>
+      <form id="form">
+        <input id="title" placeholder="Titre (requis)" required />
+        <textarea id="content" placeholder="Contenu (optionnel)" rows="5"></textarea>
+        <button type="submit" class="btn-primary">Créer l'article</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>📚 Mes articles</h2>
+      <ul id="list" class="articles-list">
+        <li class="empty-state">
+          <div class="empty-state-icon">📭</div>
+          <p>Aucun article pour le moment</p>
+        </li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>🐛 Logs</h2>
+      <div class="debug-panel" id="debug">Prêt...</div>
+    </div>
+  </div>
+
+  <script>
+    const base = '/api/v1/articles';
+    const listEl = document.getElementById('list');
+    const debug = document.getElementById('debug');
+    const loginStatus = document.getElementById('loginStatus');
+    let token = localStorage.getItem('authToken') || '';
+
+    updateAuthUI();
+
+    async function load() {
+      try {
+        const res = await fetch(base);
+        const json = await res.json();
+        const items = Array.isArray(json) ? json : (json.articles || []);
+        if (items.length === 0) {
+          listEl.innerHTML = '<li class="empty-state"><div class="empty-state-icon">📭</div><p>Aucun article</p></li>';
+        } else {
+          listEl.innerHTML = items.map(a => renderItem(a)).join('');
+        }
+        log('✓ Articles chargés: ' + items.length);
+      } catch (e) {
+        log('❌ Erreur GET: ' + e);
+      }
+    }
+
+    function renderItem(a) {
+      const title = escapeHtml(a.title);
+      const content = escapeHtml(a.content || '(sans contenu)');
+      const date = a.createdAt ? new Date(a.createdAt).toLocaleDateString('fr-FR') : 'N/A';
+      return `
+        <li class="article-item" data-id="${a.id}">
+          <div class="article-title">${title}</div>
+          <div class="article-content">${content}</div>
+          <div class="article-meta">Créé le ${date}</div>
+          <div class="article-actions">
+            <button class="btn-info" data-action="edit">✏️ Éditer</button>
+            <button class="btn-danger" data-action="delete">🗑️ Supprimer</button>
+          </div>
+        </li>
+      `;
+    }
+
+    // Register
+    document.getElementById('registerBtn').addEventListener('click', async () => {
+      const username = document.getElementById('authUser').value.trim();
+      const password = document.getElementById('authPass').value.trim();
+      if (!username || !password) { log('⚠️ Remplis username et password'); return; }
+      try {
+        const res = await fetch('/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const body = await res.json();
+        if (res.ok) {
+          log(`✓ Enregistré: ${body.username}`);
+          document.getElementById('authUser').value = '';
+          document.getElementById('authPass').value = '';
+        } else {
+          log(`❌ ${body.error}`);
+        }
+      } catch (e) {
+        log('❌ Erreur register: ' + e);
+      }
+    });
+
+    // Login
+    document.getElementById('loginBtn').addEventListener('click', async () => {
+      const username = document.getElementById('authUser').value.trim();
+      const password = document.getElementById('authPass').value.trim();
+      if (!username || !password) { log('⚠️ Remplis username et password'); return; }
+      await doLogin(username, password);
+    });
+
+    // Create user + login (automate register then login; if user exists, still attempts login)
+    document.getElementById('createAndLoginBtn').addEventListener('click', async () => {
+      const username = document.getElementById('authUser').value.trim();
+      const password = document.getElementById('authPass').value.trim();
+      if (!username || !password) { log('⚠️ Remplis username et password'); return; }
+      try {
+        const reg = await fetch('/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        if (reg.ok) {
+          log('✓ Utilisateur créé');
+        } else {
+          const body = await reg.json().catch(()=>({error:'register failed'}));
+          log(`ℹ️ Register notice: ${body.error || reg.statusText}`);
+        }
+      } catch (e) {
+        log('❌ Erreur register: ' + e);
+      }
+      // attempt login regardless (covers case where user already existed)
+      await doLogin(username, password);
+    });
+
+    async function doLogin(username, password) {
+      try {
+        const res = await fetch('/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const body = await res.json();
+        if (res.ok && body.token) {
+          token = body.token;
+          localStorage.setItem('authToken', token);
+          log(`✓ Connecté: ${username}`);
+          document.getElementById('authUser').value = '';
+          document.getElementById('authPass').value = '';
+          updateAuthUI();
+        } else {
+          log(`❌ Login failed: ${body.error || res.statusText}`);
+        }
+      } catch (e) {
+        log('❌ Erreur login: ' + e);
+      }
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      token = '';
+      localStorage.removeItem('authToken');
+      log('✓ Déconnecté');
+      updateAuthUI();
+    });
+
+    function updateAuthUI() {
+      const hasToken = !!token;
+      document.getElementById('loginBtn').style.display = hasToken ? 'none' : '';
+      document.getElementById('registerBtn').style.display = hasToken ? 'none' : '';
+      document.getElementById('createAndLoginBtn').style.display = hasToken ? 'none' : '';
+      document.getElementById('logoutBtn').style.display = hasToken ? '' : 'none';
+      document.getElementById('authUser').style.display = hasToken ? 'none' : '';
+      document.getElementById('authPass').style.display = hasToken ? 'none' : '';
+      if (hasToken) {
+        loginStatus.classList.add('active');
+        loginStatus.innerHTML = '<strong>✓ Connecté</strong> - Vous pouvez créer/modifier/supprimer des articles';
+      } else {
+        loginStatus.classList.remove('active');
+      }
+    }
+
+    // Create Article
+    document.getElementById('form').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const title = document.getElementById('title').value.trim();
+      const content = document.getElementById('content').value.trim();
+      if (!title) { log('⚠️ Le titre est requis'); return; }
+      if (!token) { log('⚠️ Connecte-toi d\'abord'); return; }
+
+      try {
+        const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+        const res = await fetch(base, { method: 'POST', headers, body: JSON.stringify({ title, content }) });
+        if (res.ok) {
+          log('✓ Article créé');
+          document.getElementById('title').value = '';
+          document.getElementById('content').value = '';
+          await load();
+        } else {
+          const body = await res.json();
+          log(`❌ ${body.error}`);
+        }
+      } catch (e) {
+        log('❌ Erreur POST: ' + e);
+      }
+    });
+
+    // Edit / Delete
+    listEl.addEventListener('click', async (ev) => {
+      const btn = ev.target.closest('button');
+      if (!btn) return;
+      const li = btn.closest('li');
+      const id = li.getAttribute('data-id');
+      const action = btn.getAttribute('data-action');
+      if (!token) { log('⚠️ Connecte-toi d\'abord'); return; }
+      const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+
+      if (action === 'edit') {
+        const currentTitle = li.querySelector('.article-title').textContent;
+        const currentContent = li.querySelector('.article-content').textContent.replace('(sans contenu)', '');
+        const newTitle = prompt('Nouveau titre', currentTitle);
+        if (newTitle === null) return;
+        const newContent = prompt('Nouveau contenu', currentContent.trim());
+        try {
+          const res = await fetch(`${base}/${id}`, {
+            method: 'PUT',
+            headers,
+            body: JSON.stringify({ title: newTitle, content: newContent })
+          });
+          if (res.ok) {
+            log('✓ Article mis à jour');
+            await load();
+          } else {
+            const body = await res.json();
+            log(`❌ ${body.error}`);
+          }
+        } catch (e) {
+          log('❌ Erreur PUT: ' + e);
+        }
+      }
+
+      if (action === 'delete') {
+        if (!confirm('Supprimer cet article ?')) return;
+        try {
+          const res = await fetch(`${base}/${id}`, { method: 'DELETE', headers });
+          if (res.status === 204) {
+            log('✓ Article supprimé');
+            await load();
+          } else {
+            const body = await res.json();
+            log(`❌ ${body.error}`);
+          }
+        } catch (e) {
+          log('❌ Erreur DELETE: ' + e);
+        }
+      }
+    });
+
+    function log(msg) {
+      debug.textContent = new Date().toLocaleTimeString() + ' - ' + msg + '\n' + debug.textContent;
+    }
+
+    function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    load();
+  </script>
+</body>
+</html>
