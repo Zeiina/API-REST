@@ -1,0 +1,103 @@
+Voici **une liste de prompts ultra-utiles, parfaitement adaptés à TON projet (API REST Articles + Auth JWT)**, que tu aurais pu poser ou que tu peux encore poser à **GitHub Copilot** pour accélérer ton développement.
+Je te les ai classés par catégories pour que tu puisses les réutiliser facilement.
+
+---
+
+# 🟦 **PROMPTS : AUTHENTIFICATION (REGISTER / LOGIN / JWT)**
+
+### 🔹 1. Générer le code de l'enregistrement utilisateur
+
+> *"Genère une fonction registerUser en Node.js/Express avec bcrypt pour hasher le mot de passe et Mongoose pour créer l'utilisateur."*
+
+### 🔹 2. Générer le code du login (JWT)
+
+> *"Écris un endpoint /auth/login en Express qui vérifie le mot de passe avec bcrypt et génère un JWT signé avec process.env.JWT_SECRET."*
+
+### 🔹 3. Middleware de protection JWT
+
+> *"Créer un middleware Express verifyToken qui lit le header Authorization: Bearer <token> et rejette la requête si le token est invalide ou manquant."*
+
+
+
+#  **PROMPTS : ARTICLES (CRUD)**
+
+
+### 🔹 6. Créer l'endpoint POST /api/v1/articles
+
+> *"Génère un contrôleur createArticle qui vérifie title, sauvegarde l'article en base et renvoie l'objet créé."*
+
+### 🔹 7. Générer l’endpoint GET /api/v1/articles
+
+> *"Écris la fonction getArticles qui retourne tous les articles triés par date décroissante."*
+
+### 🔹 8. Récupérer un article par ID
+
+> *"Crée un contrôleur getArticleById qui renvoie 404 si l’ID est invalide ou introuvable."*
+
+### 🔹 9. Mettre à jour un article
+
+> *"Génère une fonction updateArticle avec Mongoose findByIdAndUpdate et les options { new: true, runValidators: true }."*
+
+### 🔹 10. Supprimer un article
+
+> *"Écris un endpoint deleteArticle qui renvoie 204 en cas de succès et 404 si l’article n’existe pas."*
+
+---
+
+#  **PROMPTS : VALIDATION / ERREURS**
+
+### 🔹 11. Gérer proprement les erreurs Express
+
+> *"Crée un middleware global d’erreurs Express qui renvoie un JSON { error: message } avec les bons codes HTTP."*
+
+
+### 🔹 13. Vérifier le format des IDs MongoDB
+
+> *"Ajoute une vérification pour renvoyer 400 si req.params.id n’est pas un ObjectId valide."*
+
+---
+
+# 🟧 **PROMPTS : SÉCURITÉ**
+
+### 🔹 14. Empêcher l’accès sans token
+
+> *"Modifie tous les endpoints POST/PUT/DELETE pour qu’ils exigent un JWT en utilisant verifyToken."*
+
+
+
+#**PROMPTS : SWAGGER (OpenAPI)**
+
+
+### 🔹 17. Ajouter la sécurité Bearer
+
+> *"Ajoute au Swagger un schéma de sécurité JWT Bearer à tous les endpoints protégés."*
+
+---
+
+# **PROMPTS : PROJETS / STRUCTURE**
+
+### 🔹 18. Nettoyer l'architecture du projet
+
+> *"Propose une structure MVC propre pour une API Express avec controllers, routes, middleware et config."*
+
+
+
+
+*"Écris un test Jest/Supertest pour vérifier que POST /auth/register crée bien un utilisateur."*
+
+---
+
+#PROMPTS conversationnels intelligents (Copilot Chat)**
+
+
+*"Explique-moi ce que fait ce fichier, et propose des améliorations."*
+
+
+"Corrige le bug de cette fonction et explique pourquoi elle ne marchait pas."*
+
+
+ *"Génère des exemples d’articles réalistes pour ma base de données pour effectuer des tests."*
+
+
+ *"Optimise mon code pour qu’il soit plus lisible et plus maintenable."*
+
